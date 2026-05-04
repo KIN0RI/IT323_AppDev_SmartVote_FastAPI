@@ -103,6 +103,9 @@ def cast_vote(
     if current_user.role == "admin":
         raise HTTPException(status_code=403, detail="Admins cannot vote.")
 
+    if not current_user.face_verified:
+        raise HTTPException(status_code=403, detail="Face verification required before voting.")
+
     candidate = db.query(Candidate).filter(Candidate.id == payload.candidate).first()
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found.")

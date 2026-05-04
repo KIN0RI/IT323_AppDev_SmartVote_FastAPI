@@ -25,20 +25,18 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered.")
 
     voter = Voter(
-        student_id    = payload.student_id,
-        email         = payload.email,
-        full_name     = payload.full_name,
-        course        = payload.course or "",
-        year_level    = payload.year_level or "",
-        password      = hash_password(payload.password),
-        role          = "student",
-        is_active     = True,
-        is_staff      = False,
-        is_superuser  = False,
-        has_voted     = False,
-        face_verified = False,
-        date_joined   = datetime.now(),
-        last_login    = None,
+        student_id      = payload.student_id,
+        email           = payload.email,
+        full_name       = payload.full_name,
+        course          = payload.course or "",
+        year_level      = payload.year_level or "",
+        password = hash_password(payload.password),
+        role            = "student",
+        is_active       = True,
+        is_staff        = False,
+        has_voted       = False,
+        face_verified   = False,
+        date_joined     = datetime.now(),
     )
     db.add(voter)
     db.commit()

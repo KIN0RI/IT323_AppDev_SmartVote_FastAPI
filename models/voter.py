@@ -21,3 +21,4 @@ class Voter(Base):
     is_staff      = Column(Boolean, default=False)
     is_superuser  = Column(Boolean, default=False)
     password      = Column(String, nullable=False)
+    face_encoding = Column(String, nullable=True)

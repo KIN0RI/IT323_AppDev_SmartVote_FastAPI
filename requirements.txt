@@ -6,3 +6,6 @@ python-jose[cryptography]
 bcrypt
 python-multipart
 pydantic[email]
+face-recognition
+numpy
+Pillow
