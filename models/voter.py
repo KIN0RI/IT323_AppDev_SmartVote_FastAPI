@@ -15,6 +15,7 @@ class Voter(Base):
     role          = Column(String(10),  default="student")
     has_voted     = Column(Boolean, default=False)
     face_verified = Column(Boolean, default=False)
+    face_photo_path = Column(String, nullable=True)  
     date_joined   = Column(DateTime, nullable=False)
     last_login    = Column(DateTime, nullable=True)
     is_active     = Column(Boolean, default=True)

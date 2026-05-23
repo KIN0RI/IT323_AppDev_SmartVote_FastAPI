@@ -28,8 +28,8 @@ EYE_CASCADE = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_eye.xml"
 )
 
-IMG_SIZE   = 100   # resize target: 100×100 pixels
-VECTOR_DIM = IMG_SIZE * IMG_SIZE  # 10,000-dimensional vector
+IMG_SIZE   = 64    
+VECTOR_DIM = IMG_SIZE * IMG_SIZE  # 4,096-dimensional vector
 
 
 def decode_base64_image(b64_string: str) -> np.ndarray:
@@ -50,18 +50,14 @@ def to_grayscale(img_bgr: np.ndarray) -> np.ndarray:
 
 
 def detect_face(gray: np.ndarray) -> np.ndarray | None:
-    """
-    Step 2: Detect and crop the largest face in the image.
-    Returns the cropped face region or None if no face found.
-    """
     faces = FACE_CASCADE.detectMultiScale(
         gray,
         scaleFactor  = 1.1,
-        minNeighbors = 5,
-        minSize      = (60, 60),
+        minNeighbors = 3,
+        minSize      = (30, 30),
     )
     if len(faces) == 0:
-        return None
+        return gray  # fallback — use full image
 
     # Pick the largest face detected
     x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
@@ -93,23 +89,9 @@ def flatten_and_normalize(gray_face: np.ndarray) -> np.ndarray:
 
 
 def preprocess_image(b64_string: str) -> np.ndarray:
-    """
-    Full preprocessing pipeline.
-    Input:  base64-encoded image string (from mobile camera or webcam)
-    Output: 10,000-dimensional normalized numpy vector
-
-    Raises ValueError if no face detected.
-    """
     img_bgr   = decode_base64_image(b64_string)
     gray      = to_grayscale(img_bgr)
-    face_crop = detect_face(gray)
-
-    if face_crop is None:
-        raise ValueError(
-            "No face detected in the image. "
-            "Please ensure your face is clearly visible and well-lit."
-        )
-
+    face_crop = detect_face(gray)  # never None now
     equalized  = apply_clahe(face_crop)
     resized    = resize_face(equalized)
     vector     = flatten_and_normalize(resized)

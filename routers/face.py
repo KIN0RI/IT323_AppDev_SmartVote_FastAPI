@@ -1,15 +1,3 @@
-"""
-STEP 4 — FACE VERIFICATION API ENDPOINTS
-==========================================
-FastAPI router that exposes the ML pipeline as REST endpoints.
-
-Endpoints:
-  POST /api/face/register-face/   — Save voter's face during registration
-  POST /api/face/verify/          — Verify voter identity before voting
-  POST /api/face/train/           — Retrain the PCA+SVM model (admin only)
-  GET  /api/face/status/          — Check if model is trained and ready
-"""
-
 import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -54,18 +42,8 @@ def register_face(
     current_user: Voter   = Depends(get_current_user),
     db:           Session = Depends(get_db),
 ):
-    """
-    POST /api/face/register-face/
+    print(f"DEBUG: Registering face for {current_user.student_id}")
 
-    Saves the voter's face photo during registration.
-    Called after the voter fills in their registration form.
-
-    Flow:
-      1. Decode base64 image
-      2. Detect face (reject if no face found)
-      3. Save to media/voter_faces/<student_id>/photo_N.jpg
-      4. Update voter's face_photo_path in database
-    """
     try:
         saved_path = save_registration_face(
             b64_string = payload.image,
@@ -74,16 +52,18 @@ def register_face(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Save the path in the database
     current_user.face_photo_path = saved_path
     db.commit()
+    db.refresh(current_user)
+
+    print(f"DEBUG: Saved path: {saved_path}")
+    print(f"DEBUG: face_photo_path in DB: {current_user.face_photo_path}")
 
     return {
         "message":    "Face registered successfully.",
         "photo_path": saved_path,
         "student_id": current_user.student_id,
     }
-
 
 @router.post("/verify/", response_model=VerifyResponse)
 def verify_face(

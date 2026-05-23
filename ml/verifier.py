@@ -1,19 +1,4 @@
-"""
-STEP 3 — FACE VERIFIER (INFERENCE)
-====================================
-Loads the trained PCA + SVM model and verifies a live face
-against a voter's registered face.
 
-Two verification modes:
-  Mode A — Identity check: Is this person voter X?
-    → Use the SVM classifier directly.
-    → Returns True if SVM predicts the voter's student_id.
-
-  Mode B — Similarity check: How similar are these two faces?
-    → Compare PCA projections using cosine similarity.
-    → Returns True if similarity >= threshold.
-    → Used when no trained model is available yet (fallback).
-"""
 
 import os
 import numpy as np
@@ -25,8 +10,7 @@ from ml.preprocessing import preprocess_image, preprocess_from_file
 MODEL_PATH     = "ml/models/face_model.pkl"
 LABEL_ENC_PATH = "ml/models/label_encoder.pkl"
 
-# Similarity threshold for Mode B (0.0 to 1.0)
-# Scores >= this value → verified
+
 SIMILARITY_THRESHOLD = 0.75
 
 
@@ -44,26 +28,10 @@ def verify_face_svm(
     student_id:   str,
     registered_path: str,
 ) -> dict:
-    """
-    Mode A — SVM Identity Verification.
-
-    Preprocesses the live face and asks the SVM:
-    'Does this face belong to student_id?'
-
-    Args:
-        live_b64:        Base64-encoded live camera capture.
-        student_id:      The student_id of the voter claiming identity.
-        registered_path: File path to the voter's registered face image.
-
-    Returns dict with:
-        verified:    bool
-        confidence:  float (0.0 to 1.0)
-        method:      str
-        message:     str
-    """
+    
     model, le = load_model()
 
-    # Preprocess live face
+    
     try:
         live_vector = preprocess_image(live_b64)
     except ValueError as e:
@@ -78,15 +46,15 @@ def verify_face_svm(
         # No trained model yet — fallback to similarity mode
         return verify_face_similarity(live_b64, registered_path)
 
-    # Get SVM prediction probabilities
+    
     live_vector_2d = live_vector.reshape(1, -1)
     predicted_class = model.predict(live_vector_2d)[0]
     probabilities   = model.predict_proba(live_vector_2d)[0]
     confidence      = float(max(probabilities))
 
-    # Decode the predicted class back to student_id
+    
     predicted_id = le.inverse_transform([predicted_class])[0]
-    verified     = (predicted_id == student_id)
+    verified = (str(predicted_id) == str(student_id))
 
     return {
         "verified":      verified,
@@ -102,21 +70,7 @@ def verify_face_similarity(
     registered_path: str,
     threshold:       float = SIMILARITY_THRESHOLD,
 ) -> dict:
-    """
-    Mode B — PCA Cosine Similarity Verification (fallback).
-
-    Compares the PCA projection of the live face against
-    the stored registered face using cosine similarity.
-
-    Used when:
-      - The SVM model hasn't been trained yet
-      - Only one photo per voter exists
-
-    Args:
-        live_b64:        Base64-encoded live camera capture.
-        registered_path: File path to voter's registered face.
-        threshold:       Minimum cosine similarity to pass (default 0.75).
-    """
+    
     model, _ = load_model()
 
     # Preprocess both images
