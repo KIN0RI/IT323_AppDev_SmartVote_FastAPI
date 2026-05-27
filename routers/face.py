@@ -28,10 +28,11 @@ class VerifyRequest(BaseModel):
 
 
 class VerifyResponse(BaseModel):
-    verified:   bool
-    confidence: float
-    method:     str
-    message:    str
+    verified:     bool
+    confidence:   float
+    method:       str
+    message:      str
+    predicted_id: str | None = None
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -113,10 +114,11 @@ def verify_face(
         db.commit()
 
     return VerifyResponse(
-        verified   = result["verified"],
-        confidence = result["confidence"],
-        method     = result["method"],
-        message    = result["message"],
+        verified     = result["verified"],
+        confidence   = result["confidence"],
+        method       = result["method"],
+        message      = result["message"],
+        predicted_id = result.get("predicted_id"),
     )
 
 

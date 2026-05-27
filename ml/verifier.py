@@ -1,6 +1,7 @@
 """
-Face Verification using Cosine Similarity only.
-Compares live webcam face against registered photo.
+Face Verification — PCA + SVM (elective branch).
+Mode A: SVM predicts voter identity, checks against logged-in student_id.
+Mode B: Cosine similarity fallback when no trained model is available.
 """
 import os
 import base64
@@ -14,7 +15,8 @@ from ml.preprocessing import preprocess_image, preprocess_from_file
 
 MODEL_PATH     = "ml/models/face_model.pkl"
 LABEL_ENC_PATH = "ml/models/label_encoder.pkl"
-THRESHOLD      = 0.55  # cosine similarity threshold
+THRESHOLD      = 0.55  # cosine similarity threshold (Mode B only)
+SVM_THRESHOLD  = 0.50  # minimum SVM confidence to accept (Mode A)
 
 
 def load_model():
@@ -31,10 +33,57 @@ def verify_face_svm(
     registered_path: str,
 ) -> dict:
     """
-    Verify using cosine similarity between live face and registered photo.
-    Uses PCA projection if model is available for better comparison.
+    Mode A — SVM identity prediction.
+    1. Preprocess the live face into a feature vector.
+    2. Run it through the PCA+SVM pipeline to predict who it is.
+    3. Verify the predicted student_id matches the logged-in voter.
+    Falls back to cosine similarity if the model has no string class labels
+    (meaning it was trained before the label encoder was fixed).
     """
-    return verify_face_similarity(live_b64, registered_path)
+    model, le = load_model()
+
+    if model is None or le is None:
+        return verify_face_similarity(live_b64, registered_path)
+
+    # Check the label encoder has real student IDs (not integer placeholders)
+    if not isinstance(le.classes_[0], str):
+        return verify_face_similarity(live_b64, registered_path)
+
+    try:
+        live_vector = preprocess_image(live_b64)
+    except ValueError as e:
+        return {
+            "verified":     False,
+            "confidence":   0.0,
+            "predicted_id": None,
+            "method":       "pca_svm",
+            "message":      str(e),
+        }
+
+    probabilities   = model.predict_proba(live_vector.reshape(1, -1))[0]
+    predicted_class = model.predict(live_vector.reshape(1, -1))[0]
+    confidence      = float(probabilities.max())
+    predicted_id    = le.inverse_transform([predicted_class])[0]
+
+    verified = (predicted_id == student_id) and (confidence >= SVM_THRESHOLD)
+
+    if verified:
+        msg = f"SVM confirmed identity. Confidence: {confidence:.0%}."
+    elif predicted_id != student_id:
+        msg = (
+            f"SVM predicted '{predicted_id}' (confidence {confidence:.0%}), "
+            f"but expected '{student_id}'. Face does not match."
+        )
+    else:
+        msg = f"Confidence {confidence:.0%} below threshold {SVM_THRESHOLD:.0%}. Please try again."
+
+    return {
+        "verified":     verified,
+        "confidence":   round(confidence, 4),
+        "predicted_id": predicted_id,
+        "method":       "pca_svm",
+        "message":      msg,
+    }
 
 
 def verify_face_similarity(
