@@ -71,3 +71,38 @@ def root():
         "status":  "running",
         "ml":      "PCA + SVM face verification active",
     }
+
+
+@app.get("/api/setup")
+def setup(secret: str = ""):
+    if secret != "smartvote2025":
+        return {"error": "Invalid secret."}
+    db = SessionLocal()
+    try:
+        exists = db.query(Voter).filter(Voter.email == "admin@ustp.edu.ph").first()
+        if exists:
+            return {"message": "Admin already exists.", "email": "admin@ustp.edu.ph"}
+        admin = Voter(
+            student_id    = "ADMIN-001",
+            email         = "admin@ustp.edu.ph",
+            full_name     = "System Admin",
+            course        = "",
+            year_level    = "",
+            password      = hash_password("admin1234"),
+            role          = "admin",
+            is_active     = True,
+            is_staff      = True,
+            is_superuser  = True,
+            has_voted     = False,
+            face_verified = False,
+            date_joined   = datetime.now(),
+            last_login    = None,
+        )
+        db.add(admin)
+        db.commit()
+        return {"message": "Admin created!", "email": "admin@ustp.edu.ph", "password": "admin1234"}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
+    finally:
+        db.close()
