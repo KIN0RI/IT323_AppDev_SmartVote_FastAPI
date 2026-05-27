@@ -20,13 +20,15 @@ import cv2
 import numpy as np
 from PIL import Image
 
-# Load OpenCV's pre-trained Haar Cascade face detector
-FACE_CASCADE = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
-EYE_CASCADE = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_eye.xml"
-)
+_face_cascade = None
+
+def _get_face_cascade():
+    global _face_cascade
+    if _face_cascade is None:
+        _face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+    return _face_cascade
 
 IMG_SIZE   = 64    
 VECTOR_DIM = IMG_SIZE * IMG_SIZE  # 4,096-dimensional vector
@@ -50,7 +52,7 @@ def to_grayscale(img_bgr: np.ndarray) -> np.ndarray:
 
 
 def detect_face(gray: np.ndarray) -> np.ndarray | None:
-    faces = FACE_CASCADE.detectMultiScale(
+    faces = _get_face_cascade().detectMultiScale(
         gray,
         scaleFactor  = 1.1,
         minNeighbors = 3,
