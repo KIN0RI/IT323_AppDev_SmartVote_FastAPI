@@ -2,13 +2,44 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from datetime import datetime
 from routers import auth, elections, face
-from core.database import Base, engine
-import models.voter          # register Voter table
-import models.elections      # register Candidate, Vote, VoterLog, ElectionSettings tables
+from core.database import Base, engine, SessionLocal
+from core.auth import hash_password
+import models.voter
+import models.elections
+from models.voter import Voter
 
-# Create all tables on startup if they don't exist
 Base.metadata.create_all(bind=engine)
+
+def seed_admin():
+    db = SessionLocal()
+    try:
+        exists = db.query(Voter).filter(Voter.email == "admin@ustp.edu.ph").first()
+        if not exists:
+            admin = Voter(
+                student_id    = "ADMIN-001",
+                email         = "admin@ustp.edu.ph",
+                full_name     = "System Admin",
+                course        = "",
+                year_level    = "",
+                password      = hash_password("admin1234"),
+                role          = "admin",
+                is_active     = True,
+                is_staff      = True,
+                is_superuser  = True,
+                has_voted     = False,
+                face_verified = False,
+                date_joined   = datetime.now(),
+                last_login    = None,
+            )
+            db.add(admin)
+            db.commit()
+            print("Admin account created: admin@ustp.edu.ph / admin1234")
+    finally:
+        db.close()
+
+seed_admin()
 
 app = FastAPI(
     title       = "USTP SmartVote API (FastAPI)",
