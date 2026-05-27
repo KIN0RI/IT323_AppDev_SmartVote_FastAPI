@@ -3,6 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from routers import auth, elections, face
+from core.database import Base, engine
+import models.voter          # register Voter table
+import models.elections      # register Candidate, Vote, VoterLog, ElectionSettings tables
+
+# Create all tables on startup if they don't exist
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title       = "USTP SmartVote API (FastAPI)",
@@ -12,10 +18,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["*"],
-    allow_credentials = True,
-    allow_methods     = ["*"],
-    allow_headers     = ["*"],
+    allow_origins  = ["*"],
+    allow_methods  = ["*"],
+    allow_headers  = ["*"],
 )
 
 
