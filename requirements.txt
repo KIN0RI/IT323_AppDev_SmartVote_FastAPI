@@ -6,3 +6,8 @@ python-jose[cryptography]
 bcrypt
 python-multipart
 pydantic[email]
+numpy
+scikit-learn
+joblib
+Pillow
+opencv-python-headless

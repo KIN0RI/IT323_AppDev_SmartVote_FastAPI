@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import hashlib
 import base64
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from models.voter import Voter
 
-SECRET_KEY                = "smartvote-fastapi-secret-key-change-in-production"
+SECRET_KEY                = os.environ.get("SECRET_KEY", "smartvote-fastapi-secret-key-change-in-production")
 ALGORITHM                 = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 8
 
@@ -59,7 +59,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict) -> str:
     payload        = data.copy()
-    payload["exp"] = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 

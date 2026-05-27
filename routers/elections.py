@@ -259,7 +259,7 @@ def voter_log(
 @router.get("/election-settings/", response_model=ElectionSettingsResponse)
 def get_election_settings(
     db: Session = Depends(get_db),
-    current_user: Voter = Depends(require_admin),
+    current_user: Voter = Depends(get_current_user),
 ):
     """GET /api/election-settings/"""
     obj = db.query(ElectionSettings).order_by(ElectionSettings.created_at.desc()).first()
