@@ -34,15 +34,18 @@ IMG_SIZE   = 64
 VECTOR_DIM = IMG_SIZE * IMG_SIZE  # 4,096-dimensional vector
 
 
+MAX_DIM = 640  # cap incoming images to reduce memory usage
+
 def decode_base64_image(b64_string: str) -> np.ndarray:
-    """Convert a base64-encoded image string to a numpy array (BGR)."""
-    # Strip the data:image/... header if present
     if "," in b64_string:
         b64_string = b64_string.split(",")[1]
     img_bytes = base64.b64decode(b64_string)
     img_pil   = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    img_np    = np.array(img_pil)
-    # PIL is RGB, OpenCV is BGR
+    w, h = img_pil.size
+    if max(w, h) > MAX_DIM:
+        ratio   = MAX_DIM / max(w, h)
+        img_pil = img_pil.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+    img_np = np.array(img_pil)
     return cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
 
