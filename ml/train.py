@@ -121,9 +121,12 @@ def train():
     print(f"  Test samples     : {len(X_test)}")
 
     # ── Step 4: Build and train PCA + SVM pipeline ───────────────────────────
-    print(f"\n[4/5] Training PCA ({N_COMPONENTS} components) + SVM...")
+    cv_folds = min(5, len(X_train))
+    # PCA n_components must fit inside each CV fold's training slice (cv-1)/cv of X_train
+    max_for_cv = int(len(X_train) * (cv_folds - 1) / cv_folds) - 1
+    n_components = min(N_COMPONENTS, max_for_cv, X_train.shape[1])
 
-    n_components = min(N_COMPONENTS, len(X_train) - 1, X_train.shape[1])
+    print(f"\n[4/5] Training PCA ({n_components} components) + SVM...")
 
     pipeline = Pipeline([
         ("pca", PCA(n_components=n_components, whiten=True, random_state=RANDOM_STATE)),
@@ -139,7 +142,7 @@ def train():
         }
         grid_search = GridSearchCV(
             pipeline, param_grid,
-            cv=min(5, len(X_train)),
+            cv=cv_folds,
             n_jobs=-1, verbose=0
         )
         grid_search.fit(X_train, y_train)
