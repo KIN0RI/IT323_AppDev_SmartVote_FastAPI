@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.local
+
+# Media uploads — never commit real face photos
+media/voter_faces/
+
+# Trained model files — large binaries, regenerate via /api/face/train/
+ml/models/*.pkl
+ml/models/model_info.json
+
+# Database
+*.db
+*.sqlite3
