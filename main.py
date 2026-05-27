@@ -36,6 +36,11 @@ def seed_admin():
             db.add(admin)
             db.commit()
             print("Admin account created: admin@ustp.edu.ph / admin1234")
+        else:
+            print("Admin already exists.")
+    except Exception as e:
+        db.rollback()
+        print(f"seed_admin error: {e}")
     finally:
         db.close()
 
@@ -53,7 +58,6 @@ app.add_middleware(
     allow_methods  = ["*"],
     allow_headers  = ["*"],
 )
-
 
 os.makedirs("media/voter_faces", exist_ok=True)
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -73,7 +77,7 @@ def root():
     }
 
 
-@app.get("/api/setup")
+@app.get("/setup")
 def setup(secret: str = ""):
     if secret != "smartvote2025":
         return {"error": "Invalid secret."}
